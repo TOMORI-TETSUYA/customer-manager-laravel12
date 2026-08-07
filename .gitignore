@@ -1,0 +1,11 @@
+.env
+customer-management_app/.env
+customer-management_app/vendor/
+customer-management_app/storage/*.key
+customer-management_app/storage/logs/*
+customer-management_app/bootstrap/cache/*
+docker/mysql/data/
+*.sql.gz
+*.bak
+.DS_Store
+Thumbs.db

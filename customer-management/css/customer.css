@@ -1,0 +1,159 @@
+/* =====================================================================
+   Patron Hub - customer.css (CUS-01〜04)
+   ===================================================================== */
+
+/* 検索バー + フィルター */
+.cust-search {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-4);
+}
+
+.cust-search__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-3);
+}
+
+.cust-search__keyword {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.cust-filter {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--ph-sp-3);
+}
+
+.cust-filter .ph-field__label {
+    font-size: 0.75rem;
+}
+
+/* 一覧: 768px以上はテーブル、未満はカード (§32.2) */
+.cust-cards {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .cust-table-wrap {
+        display: none;
+    }
+
+    .cust-cards {
+        display: flex;
+        flex-direction: column;
+        gap: var(--ph-sp-3);
+    }
+}
+
+.cust-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-2);
+    padding: var(--ph-sp-4);
+    background: var(--cm-surface);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-md);
+    box-shadow: var(--cm-shadow);
+}
+
+.cust-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-2);
+}
+
+.cust-card__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cust-card__name a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cust-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ph-sp-1) var(--ph-sp-3);
+    font-size: 0.8125rem;
+    color: var(--cm-muted);
+}
+
+/* 詳細画面 */
+.cust-detail {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ph-sp-5);
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    .cust-detail {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    }
+}
+
+.cust-props {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ph-sp-2) var(--ph-sp-4);
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+.cust-props dt {
+    color: var(--cm-muted);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    padding-top: 2px;
+    white-space: nowrap;
+}
+
+.cust-props dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* 削除操作は主要操作から離す (§32.2) */
+.cust-danger-zone {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--ph-sp-5);
+    border-top: 1px dashed var(--cm-border);
+}
+
+/* 重複候補の警告 (§19) */
+.cust-dup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-3);
+}
+
+.cust-dup__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cust-dup__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-2) var(--ph-sp-3);
+    padding: var(--ph-sp-2) var(--ph-sp-3);
+    background: var(--cm-surface);
+    border: 1px solid rgba(181, 71, 8, 0.25);
+    border-radius: var(--ph-radius-sm);
+    font-size: 0.875rem;
+}

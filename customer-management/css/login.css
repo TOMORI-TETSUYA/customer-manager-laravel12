@@ -1,0 +1,390 @@
+/* =====================================================================
+   Patron Hub - login.css (AUTH-01)
+
+   2026年8月時点のトレンドを、仕様書 §12・§13 の制約内で採用:
+     - オーロラ調レイヤードグラデーション(ぼかしブロブ3層・10〜14秒でドリフト)
+     - 微細なグレイン(ノイズ)オーバーレイ ※静的・低負荷
+     - 控えめなガラス表現のカード(過剰なガラスはNG → 不透明度92%)
+     - スプリング系イージングの段階フェードイン(起動演出)
+     - prefers-reduced-motion は app.css 側で全停止
+   ===================================================================== */
+
+/* ------------------------------------------------------------------ */
+/* シーン全体                                                          */
+/* ------------------------------------------------------------------ */
+
+.login-scene {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh; /* モバイルのアドレスバーによる高さバグを防止 */
+    display: grid;
+    place-items: center;
+    padding: var(--ph-sp-5) var(--ph-sp-4);
+    background:
+        linear-gradient(180deg, #eef1fb 0%, var(--cm-background) 55%, #f2f6f5 100%);
+    overflow: clip; /* ブロブのはみ出しによる横スクロールを遮断 */
+    isolation: isolate;
+}
+
+/* ------------------------------------------------------------------ */
+/* レイヤー型グラデーション (§12.1 / §13.3: ぼかし2〜3個・10〜14秒)     */
+/* ------------------------------------------------------------------ */
+
+.login-aurora {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+}
+
+.login-aurora__blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.55;
+    will-change: transform;
+}
+
+.login-aurora__blob--indigo {
+    width: clamp(320px, 46vw, 620px);
+    height: clamp(320px, 46vw, 620px);
+    top: -12%;
+    left: -8%;
+    background: radial-gradient(circle at 30% 30%,
+        #818cf8 0%, var(--cm-primary) 55%, transparent 72%);
+    animation: aurora-drift-a 12s ease-in-out infinite alternate;
+}
+
+.login-aurora__blob--teal {
+    width: clamp(280px, 40vw, 540px);
+    height: clamp(280px, 40vw, 540px);
+    right: -10%;
+    bottom: -14%;
+    background: radial-gradient(circle at 60% 40%,
+        #5eead4 0%, var(--cm-accent) 55%, transparent 72%);
+    animation: aurora-drift-b 14s ease-in-out infinite alternate;
+}
+
+.login-aurora__blob--violet {
+    width: clamp(220px, 30vw, 420px);
+    height: clamp(220px, 30vw, 420px);
+    top: 38%;
+    left: 52%;
+    opacity: 0.35;
+    background: radial-gradient(circle at 50% 50%,
+        #c4b5fd 0%, #a78bfa 50%, transparent 70%);
+    animation: aurora-drift-c 10s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-a {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(6vw, 5vh, 0) scale(1.08); }
+}
+
+@keyframes aurora-drift-b {
+    from { transform: translate3d(0, 0, 0) scale(1.05); }
+    to   { transform: translate3d(-5vw, -6vh, 0) scale(0.96); }
+}
+
+@keyframes aurora-drift-c {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-4vw, 6vh, 0); }
+}
+
+/* グレインオーバーレイ(静的・SVGノイズ) */
+.login-scene::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+}
+
+/* ------------------------------------------------------------------ */
+/* ログインカード                                                      */
+/* ------------------------------------------------------------------ */
+
+.login-card {
+    width: min(100%, 420px);
+    background: rgba(255, 255, 255, 0.92); /* 控えめなガラス表現 (§12.2) */
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(228, 231, 236, 0.9);
+    border-radius: var(--ph-radius-xl);
+    box-shadow:
+        0 24px 60px rgba(24, 34, 48, 0.12),
+        0 2px 8px rgba(24, 34, 48, 0.05);
+}
+
+.login-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-5);
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+/* ブランドブロック */
+.login-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ph-sp-3);
+    text-align: center;
+}
+
+.login-brand__mark {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background:
+        conic-gradient(from 210deg,
+            var(--cm-primary) 0%, #7c6cf0 30%,
+            var(--cm-accent) 62%, var(--cm-primary) 100%);
+    box-shadow:
+        inset 0 -8px 14px rgba(24, 34, 48, 0.28),
+        inset 0 6px 10px rgba(255, 255, 255, 0.35),
+        0 8px 24px rgba(79, 70, 229, 0.35);
+}
+
+.login-brand__title {
+    font-size: 1.625rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.login-brand__title .is-gradient {
+    background: linear-gradient(120deg, var(--cm-primary) 10%, var(--cm-accent) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.login-brand__sub {
+    font-size: 0.8125rem;
+    color: var(--cm-muted);
+    letter-spacing: 0.14em;
+}
+
+/* フォーム */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-4);
+}
+
+.login-form .form-control {
+    padding: 0.75rem 0.875rem;
+    border-radius: var(--ph-radius-md);
+    background: rgba(246, 247, 251, 0.7);
+}
+
+.login-form .form-control:focus {
+    background: var(--cm-surface);
+}
+
+/* パスワード表示切り替え */
+.login-password {
+    position: relative;
+}
+
+.login-password .form-control {
+    padding-right: 3rem;
+}
+
+.login-password__toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: var(--ph-radius-sm);
+    background: transparent;
+    color: var(--cm-muted);
+    cursor: pointer;
+}
+
+.login-password__toggle:hover {
+    color: var(--cm-text);
+}
+
+.login-password__toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.login-remember {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-2);
+    font-size: 0.875rem;
+    color: var(--cm-muted);
+}
+
+.login-remember input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--cm-primary);
+    margin: 0;
+}
+
+/* ログインボタン (§13.3: ホバーで2px上へ / 処理中は無効化) */
+.login-submit {
+    width: 100%;
+    padding: 0.8125rem 1rem;
+    border: 0;
+    border-radius: var(--ph-radius-md);
+    background: linear-gradient(120deg, var(--cm-primary) 0%, #6157ec 55%, var(--cm-primary-dark) 100%);
+    background-size: 150% 100%;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+        transform 0.18s var(--ph-ease-out),
+        box-shadow 0.18s var(--ph-ease-out),
+        background-position 0.3s ease;
+}
+
+.login-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background-position: 100% 0;
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.38);
+}
+
+.login-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.login-submit:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* 送信中スピナー */
+.login-submit__spinner {
+    display: none;
+    width: 1.05em;
+    height: 1.05em;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: login-spin 0.7s linear infinite;
+}
+
+.login-submit.is-loading .login-submit__spinner {
+    display: inline-block;
+}
+
+.login-submit__inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ph-sp-2);
+}
+
+@keyframes login-spin {
+    to { transform: rotate(360deg); }
+}
+
+.login-footnote {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--cm-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* 起動アニメーション (§13.3: カードを下からフェードイン + 段階表示)     */
+/* JSが .is-ready を付与すると開始。JS無効時は即時表示のまま。          */
+/* ------------------------------------------------------------------ */
+
+.login-scene.js-anim .login-card {
+    opacity: 0;
+    transform: translateY(28px) scale(0.985);
+}
+
+.login-scene.js-anim .login-stagger {
+    opacity: 0;
+    transform: translateY(14px);
+}
+
+.login-scene.js-anim .login-brand__mark {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(6px);
+}
+
+.login-scene.js-anim.is-ready .login-card {
+    animation: login-card-in 0.7s var(--ph-ease-spring) forwards;
+}
+
+.login-scene.js-anim.is-ready .login-brand__mark {
+    animation: login-mark-in 0.8s var(--ph-ease-spring) 0.15s forwards;
+}
+
+.login-scene.js-anim.is-ready .login-stagger {
+    animation: login-rise-in 0.55s var(--ph-ease-spring) forwards;
+    animation-delay: calc(0.28s + var(--stagger-i, 0) * 0.08s);
+}
+
+@keyframes login-card-in {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes login-mark-in {
+    60% {
+        filter: blur(0);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes login-rise-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 入力エラー時のシェイク(1回のみ・控えめ) */
+.login-card.is-error {
+    animation: login-shake 0.4s ease;
+}
+
+@keyframes login-shake {
+    20% { transform: translateX(-6px); }
+    45% { transform: translateX(5px); }
+    70% { transform: translateX(-3px); }
+    90% { transform: translateX(2px); }
+}
+
+/* 小型スマートフォン (§32: 360px〜) */
+@media (max-width: 400px) {
+    .login-card__body {
+        gap: var(--ph-sp-4);
+    }
+
+    .login-brand__title {
+        font-size: 1.375rem;
+    }
+}

@@ -1,0 +1,655 @@
+/* =====================================================================
+   Patron Hub - app.css
+   全画面共通: デザイントークン / リセット / アプリシェル / 部品
+
+   スペーシング方針(バグ防止):
+     1. 余白は必ず --ph-sp-* トークンから使う(直書き禁止)
+     2. 兄弟間の余白は margin ではなく flex/grid の gap で作る
+        (マージン相殺を構造的に発生させない)
+     3. box-sizing: border-box を全要素へ適用
+     4. 横スクロールは overflow-x: clip で遮断
+   ===================================================================== */
+
+:root {
+    /* 基本カラー (仕様書 §12.3) */
+    --cm-primary: #4f46e5;
+    --cm-primary-dark: #3730a3;
+    --cm-accent: #0f766e;
+    --cm-background: #f6f7fb;
+    --cm-surface: #ffffff;
+    --cm-text: #182230;
+    --cm-muted: #667085;
+    --cm-border: #e4e7ec;
+    --cm-success: #067647;
+    --cm-warning: #b54708;
+    --cm-danger: #b42318;
+    --cm-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
+
+    /* 派生カラー */
+    --ph-primary-soft: #eef2ff;
+    --ph-accent-soft: #ecfdf5;
+    --ph-danger-soft: #fef3f2;
+    --ph-warning-soft: #fffaeb;
+
+    /* スペーシングスケール (4px基準・8段階) */
+    --ph-sp-1: 0.25rem;   /*  4px */
+    --ph-sp-2: 0.5rem;    /*  8px */
+    --ph-sp-3: 0.75rem;   /* 12px */
+    --ph-sp-4: 1rem;      /* 16px */
+    --ph-sp-5: 1.5rem;    /* 24px */
+    --ph-sp-6: 2rem;      /* 32px */
+    --ph-sp-7: 3rem;      /* 48px */
+    --ph-sp-8: 4rem;      /* 64px */
+
+    /* 角丸・線 */
+    --ph-radius-sm: 8px;
+    --ph-radius-md: 12px;
+    --ph-radius-lg: 16px;
+    --ph-radius-xl: 24px;
+
+    /* タイポグラフィ */
+    --ph-font-sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+        "Noto Sans JP", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --ph-font-num: "SF Pro Display", "Segoe UI", var(--ph-font-sans);
+
+    /* レイアウト */
+    --ph-header-h: 64px;
+    --ph-sidebar-w: 248px;
+    --ph-content-max: 1240px;
+
+    /* モーション */
+    --ph-ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+    --ph-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------ */
+/* リセット                                                            */
+/* ------------------------------------------------------------------ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--ph-font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--cm-text);
+    background-color: var(--cm-background);
+    overflow-x: clip; /* ページ全体の横スクロールを構造的に遮断 (§11.2) */
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+    margin: 0; /* 余白は親のgapで管理する */
+}
+
+/* ------------------------------------------------------------------ */
+/* フォーカスリング (§2.5 キーボード操作対応)                          */
+/* ------------------------------------------------------------------ */
+
+:focus-visible {
+    outline: 2px solid var(--cm-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--cm-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+}
+
+/* ------------------------------------------------------------------ */
+/* アプリシェル (§11.1)                                                */
+/* ------------------------------------------------------------------ */
+
+.ph-shell {
+    display: grid;
+    grid-template-rows: var(--ph-header-h) 1fr;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ヘッダー */
+.ph-header {
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-4);
+    padding-inline: var(--ph-sp-4);
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--cm-border);
+}
+
+.ph-header__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-2);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    letter-spacing: 0.01em;
+    color: var(--cm-text);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ph-header__spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ph-header__user {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-3);
+    min-width: 0;
+}
+
+.ph-header__username {
+    max-width: 12em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--cm-muted);
+    font-size: 0.875rem;
+}
+
+/* ブランドマーク(オーブ) */
+.ph-mark {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background:
+        radial-gradient(120% 120% at 25% 20%,
+            #a5b4fc 0%, var(--cm-primary) 45%, var(--cm-primary-dark) 100%);
+    box-shadow: inset 0 -4px 8px rgba(24, 34, 48, 0.25),
+        0 2px 6px rgba(79, 70, 229, 0.35);
+}
+
+/* 本体 = サイドバー + コンテンツ */
+.ph-body {
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    min-width: 0;
+}
+
+@media (min-width: 992px) {
+    .ph-body {
+        grid-template-columns: var(--ph-sidebar-w) minmax(0, 1fr);
+    }
+}
+
+/* サイドバー */
+.ph-sidebar {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .ph-sidebar {
+        display: block;
+        border-right: 1px solid var(--cm-border);
+        background: var(--cm-surface);
+        padding: var(--ph-sp-4);
+    }
+
+    .ph-sidebar__inner {
+        position: sticky;
+        top: calc(var(--ph-header-h) + var(--ph-sp-4));
+        display: flex;
+        flex-direction: column;
+        gap: var(--ph-sp-1);
+    }
+}
+
+.ph-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-3);
+    padding: var(--ph-sp-2) var(--ph-sp-3);
+    border-radius: var(--ph-radius-sm);
+    color: var(--cm-muted);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ph-nav-link:hover {
+    background: var(--cm-background);
+    color: var(--cm-text);
+}
+
+.ph-nav-link.is-active {
+    background: var(--ph-primary-soft);
+    color: var(--cm-primary-dark);
+    font-weight: 600;
+}
+
+.ph-nav-link__icon {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ph-nav-section {
+    margin-top: var(--ph-sp-4);
+    padding-inline: var(--ph-sp-3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--cm-muted);
+    text-transform: uppercase;
+}
+
+/* メインコンテンツ */
+.ph-main {
+    min-width: 0; /* gridの子のはみ出しを防止 */
+    padding: var(--ph-sp-5) var(--ph-sp-4) var(--ph-sp-8);
+}
+
+.ph-container {
+    max-width: var(--ph-content-max);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-5); /* セクション間の余白はgapで統一 */
+}
+
+/* ページタイトル行 */
+.ph-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-3);
+}
+
+.ph-page-head__title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.ph-page-head__sub {
+    color: var(--cm-muted);
+    font-size: 0.875rem;
+}
+
+.ph-page-head__actions {
+    display: flex;
+    gap: var(--ph-sp-2);
+    margin-left: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* カード (§12.1 角丸カード・細い境界線・控えめな影)                    */
+/* ------------------------------------------------------------------ */
+
+.ph-card {
+    background: var(--cm-surface);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-lg);
+    box-shadow: var(--cm-shadow);
+}
+
+.ph-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-4);
+    padding: var(--ph-sp-5);
+}
+
+.ph-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ */
+/* フォーム (§32.1)                                                    */
+/* ------------------------------------------------------------------ */
+
+.ph-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-5);
+}
+
+.ph-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ph-sp-4);
+}
+
+@media (min-width: 768px) {
+    .ph-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* PCは最大2列 */
+    }
+
+    .ph-form-grid > .is-span-2 {
+        grid-column: 1 / -1;
+    }
+}
+
+.ph-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-1);
+    min-width: 0;
+}
+
+.ph-field__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cm-text);
+}
+
+.ph-field__label .is-required {
+    color: var(--cm-danger);
+    font-size: 0.75rem;
+    margin-left: var(--ph-sp-1);
+}
+
+.ph-field__help {
+    font-size: 0.75rem;
+    color: var(--cm-muted);
+}
+
+/* エラーは入力欄の直下へ (§32.1) */
+.ph-field__error {
+    font-size: 0.8125rem;
+    color: var(--cm-danger);
+}
+
+.form-control,
+.form-select {
+    border-color: var(--cm-border);
+    border-radius: var(--ph-radius-sm);
+    padding: 0.5625rem 0.75rem;
+    font-size: 0.9375rem;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--cm-danger);
+}
+
+.ph-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ph-sp-3);
+    align-items: center;
+}
+
+/* ------------------------------------------------------------------ */
+/* ボタン                                                              */
+/* ------------------------------------------------------------------ */
+
+.ph-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ph-sp-2);
+    padding: 0.5625rem 1.125rem;
+    border-radius: var(--ph-radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s var(--ph-ease-out),
+        box-shadow 0.15s var(--ph-ease-out),
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.ph-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ph-btn--primary {
+    background: var(--cm-primary);
+    color: #fff;
+}
+
+.ph-btn--primary:hover:not(:disabled) {
+    background: var(--cm-primary-dark);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.28);
+}
+
+.ph-btn--ghost {
+    background: var(--cm-surface);
+    border-color: var(--cm-border);
+    color: var(--cm-text);
+}
+
+.ph-btn--ghost:hover:not(:disabled) {
+    border-color: var(--cm-muted);
+    color: var(--cm-text);
+}
+
+.ph-btn--danger {
+    background: var(--ph-danger-soft);
+    border-color: rgba(180, 35, 24, 0.25);
+    color: var(--cm-danger);
+}
+
+.ph-btn--danger:hover:not(:disabled) {
+    background: var(--cm-danger);
+    color: #fff;
+}
+
+.ph-btn--sm {
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* ステータスバッジ (§12.1)                                            */
+/* ------------------------------------------------------------------ */
+
+.ph-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ph-sp-1);
+    padding: 0.125rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.ph-badge--success {
+    background: var(--ph-accent-soft);
+    color: var(--cm-success);
+    border-color: rgba(6, 118, 71, 0.2);
+}
+
+.ph-badge--warning {
+    background: var(--ph-warning-soft);
+    color: var(--cm-warning);
+    border-color: rgba(181, 71, 8, 0.2);
+}
+
+.ph-badge--danger {
+    background: var(--ph-danger-soft);
+    color: var(--cm-danger);
+    border-color: rgba(180, 35, 24, 0.2);
+}
+
+.ph-badge--info {
+    background: var(--ph-primary-soft);
+    color: var(--cm-primary-dark);
+    border-color: rgba(79, 70, 229, 0.2);
+}
+
+.ph-badge--muted {
+    background: var(--cm-background);
+    color: var(--cm-muted);
+    border-color: var(--cm-border);
+}
+
+/* ------------------------------------------------------------------ */
+/* テーブル                                                            */
+/* ------------------------------------------------------------------ */
+
+.ph-table-wrap {
+    overflow-x: auto; /* 横スクロールはテーブル部分のみ (§32.2) */
+    border-radius: var(--ph-radius-md);
+    border: 1px solid var(--cm-border);
+}
+
+.ph-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    background: var(--cm-surface);
+    font-size: 0.875rem;
+}
+
+.ph-table th {
+    padding: var(--ph-sp-3) var(--ph-sp-4);
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--cm-muted);
+    background: var(--cm-background);
+    border-bottom: 1px solid var(--cm-border);
+    white-space: nowrap;
+}
+
+.ph-table td {
+    padding: var(--ph-sp-3) var(--ph-sp-4);
+    border-bottom: 1px solid var(--cm-border);
+    vertical-align: middle;
+}
+
+.ph-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.ph-table tbody tr:hover {
+    background: rgba(79, 70, 229, 0.03);
+}
+
+/* ------------------------------------------------------------------ */
+/* アラート・フラッシュ                                                */
+/* ------------------------------------------------------------------ */
+
+.ph-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ph-sp-3);
+    padding: var(--ph-sp-3) var(--ph-sp-4);
+    border-radius: var(--ph-radius-md);
+    border: 1px solid;
+    font-size: 0.875rem;
+}
+
+.ph-alert--success {
+    background: var(--ph-accent-soft);
+    border-color: rgba(6, 118, 71, 0.25);
+    color: var(--cm-success);
+}
+
+.ph-alert--danger {
+    background: var(--ph-danger-soft);
+    border-color: rgba(180, 35, 24, 0.25);
+    color: var(--cm-danger);
+}
+
+.ph-alert--info {
+    background: var(--ph-primary-soft);
+    border-color: rgba(79, 70, 229, 0.25);
+    color: var(--cm-primary-dark);
+}
+
+.ph-alert ul {
+    margin: 0;
+    padding-left: 1.1em;
+}
+
+/* ------------------------------------------------------------------ */
+/* 汎用ユーティリティ                                                  */
+/* ------------------------------------------------------------------ */
+
+.ph-stack-2 { display: flex; flex-direction: column; gap: var(--ph-sp-2); }
+.ph-stack-3 { display: flex; flex-direction: column; gap: var(--ph-sp-3); }
+.ph-stack-4 { display: flex; flex-direction: column; gap: var(--ph-sp-4); }
+
+.ph-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-3);
+}
+
+.ph-muted { color: var(--cm-muted); }
+.ph-num { font-family: var(--ph-font-num); font-variant-numeric: tabular-nums; }
+.ph-text-sm { font-size: 0.8125rem; }
+.ph-text-right { text-align: right; }
+.ph-nowrap { white-space: nowrap; }
+
+/* ページネーション */
+.ph-pagination-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ph-sp-3);
+}
+
+.pagination {
+    margin: 0;
+    --bs-pagination-active-bg: var(--cm-primary);
+    --bs-pagination-active-border-color: var(--cm-primary);
+    --bs-pagination-color: var(--cm-primary-dark);
+}
+
+/* ------------------------------------------------------------------ */
+/* 動きを減らす設定 (仕様書 §13.4 指定コードそのまま)                   */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

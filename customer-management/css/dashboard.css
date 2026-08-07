@@ -1,0 +1,97 @@
+/* =====================================================================
+   Patron Hub - dashboard.css (DASH-01)
+   ===================================================================== */
+
+.dash-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--ph-sp-4);
+}
+
+.dash-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-1);
+    padding: var(--ph-sp-4) var(--ph-sp-5);
+    background: var(--cm-surface);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-lg);
+    box-shadow: var(--cm-shadow);
+}
+
+.dash-stat__label {
+    font-size: 0.8125rem;
+    color: var(--cm-muted);
+}
+
+.dash-stat__value {
+    font-family: var(--ph-font-num);
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.dash-stat--accent .dash-stat__value { color: var(--cm-primary); }
+.dash-stat--warn .dash-stat__value   { color: var(--cm-warning); }
+
+.dash-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ph-sp-5);
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    .dash-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.dash-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dash-list__item {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-3);
+    padding: var(--ph-sp-3) 0;
+    border-bottom: 1px solid var(--cm-border);
+    min-width: 0;
+}
+
+.dash-list__item:last-child {
+    border-bottom: 0;
+}
+
+.dash-list__main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dash-list__title {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-list__meta {
+    font-size: 0.8125rem;
+    color: var(--cm-muted);
+}
+
+.dash-empty {
+    padding: var(--ph-sp-5) 0;
+    text-align: center;
+    color: var(--cm-muted);
+    font-size: 0.875rem;
+}

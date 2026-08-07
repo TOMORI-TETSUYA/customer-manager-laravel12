@@ -1,0 +1,99 @@
+/* =====================================================================
+   Patron Hub - responsive.css (§32)
+   ブレークポイント: 360 / 576 / 768 / 992 / 1200 / 1400
+   基本はモバイルファースト。ここでは横断的な調整のみを持つ。
+   ===================================================================== */
+
+/* スマートフォン: メインコンテンツ1列・余白を詰める */
+@media (max-width: 575.98px) {
+    .ph-main {
+        padding: var(--ph-sp-4) var(--ph-sp-3) var(--ph-sp-7);
+    }
+
+    .ph-card__body {
+        padding: var(--ph-sp-4);
+    }
+
+    .ph-page-head__actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .ph-page-head__actions .ph-btn {
+        flex: 1 1 auto;
+    }
+
+    /* ボタンを小さくしすぎない (§32.1) */
+    .ph-btn {
+        min-height: 44px;
+    }
+}
+
+/* タブレット */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .ph-main {
+        padding-inline: var(--ph-sp-5);
+    }
+}
+
+/* Offcanvasメニュー (§11.2) */
+.ph-offcanvas {
+    --bs-offcanvas-width: 280px;
+}
+
+.ph-offcanvas .offcanvas-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-1);
+    padding: var(--ph-sp-4);
+}
+
+.ph-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-sm);
+    background: var(--cm-surface);
+    color: var(--cm-text);
+    cursor: pointer;
+}
+
+.ph-menu-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+}
+
+@media (min-width: 992px) {
+    .ph-menu-toggle {
+        display: none;
+    }
+}
+
+/* 大型画面: 行間にゆとり */
+@media (min-width: 1400px) {
+    .ph-table td,
+    .ph-table th {
+        padding-inline: var(--ph-sp-5);
+    }
+}
+
+/* 印刷 */
+@media print {
+    .ph-header,
+    .ph-sidebar,
+    .ph-page-head__actions,
+    .ph-menu-toggle {
+        display: none !important;
+    }
+
+    .ph-main {
+        padding: 0;
+    }
+}
