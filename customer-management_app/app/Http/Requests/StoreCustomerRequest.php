@@ -48,9 +48,13 @@ class StoreCustomerRequest extends FormRequest
             'building'                 => ['nullable', 'string', 'max:255'],
             'preferred_contact_method' => ['nullable', Rule::in(['phone', 'email', 'line', 'mail'])],
             'status'                   => ['required', Rule::enum(CustomerStatus::class)],
+            // 画面のプルダウンから外すだけでなく、ここでも弾く。
+            // 選択肢に出ないユーザーをフォーム改ざんで指定されないようにするため。
             'assigned_user_id'         => [
                 'required',
-                Rule::exists('users', 'id')->where('is_active', true),
+                Rule::exists('users', 'id')
+                    ->where('is_active', true)
+                    ->whereNotIn('login_id', config('auth.non_assignable_login_ids', [])),
             ],
             'source'                   => ['nullable', 'string', 'max:50'],
             'next_action_at'           => ['nullable', 'date'],

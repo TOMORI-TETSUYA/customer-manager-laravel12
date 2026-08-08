@@ -1,0 +1,223 @@
+/* =====================================================================
+   Patron Hub - user.css (USR-01)
+   ユーザー管理: 入力欄+操作ボタン / パスワード表示 / 一覧カード
+
+   余白は app.css のスペーシングトークンのみを使う。
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   入力欄とコピー・表示ボタンの横並び
+   --------------------------------------------------------------------- */
+.usr-input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--ph-sp-2);
+}
+
+/* 入力欄が伸縮し、ボタンは縮まない。
+   min-width: 0 が無いと flex 子要素が内容幅で突っ張り、横スクロールの原因になる。 */
+.usr-input-group .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.usr-copy-btn {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 var(--ph-sp-3);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-sm);
+    background: var(--cm-surface);
+    color: var(--cm-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease,
+                color 0.15s ease,
+                border-color 0.15s ease;
+}
+
+.usr-copy-btn:hover {
+    border-color: var(--cm-primary);
+    background: var(--ph-primary-soft);
+    color: var(--cm-primary-dark);
+}
+
+.usr-copy-btn:focus-visible {
+    outline: 2px solid var(--cm-primary);
+    outline-offset: 2px;
+}
+
+/* コピー完了・失敗の一時表示 */
+.usr-copy-btn.is-done {
+    border-color: var(--cm-success);
+    background: var(--ph-accent-soft);
+    color: var(--cm-success);
+}
+
+/* ---------------------------------------------------------------------
+   自動生成ボタンと状態表示
+   --------------------------------------------------------------------- */
+.usr-pw-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-2) var(--ph-sp-3);
+    margin-top: var(--ph-sp-2);
+}
+
+.usr-pw-status {
+    font-size: 0.8125rem;
+    color: var(--cm-success);
+}
+
+.usr-pw-status.is-error {
+    color: var(--cm-danger);
+}
+
+/* ---------------------------------------------------------------------
+   パスワードの表示
+   --------------------------------------------------------------------- */
+
+/* 伏字。保存されているのはハッシュ値のため、平文は復元できない。 */
+.usr-pw--masked {
+    color: var(--cm-muted);
+    letter-spacing: 0.12em;
+    user-select: none;
+}
+
+/* 発行直後の1回だけ表示される平文。
+   誤読を避けるため等幅フォントにし、クリックで全選択できるようにする。 */
+.usr-pw--plain {
+    display: inline-block;
+    padding: var(--ph-sp-1) var(--ph-sp-2);
+    border: 1px solid var(--cm-warning);
+    border-radius: var(--ph-radius-sm);
+    background: var(--ph-warning-soft);
+    color: var(--cm-text);
+    font-family: ui-monospace, "SFMono-Regular", "Consolas",
+        "Liberation Mono", "Menlo", monospace;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    user-select: all;
+}
+
+/* テキスト + コピーボタンの並び */
+.usr-copyable {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ph-sp-2);
+}
+
+.usr-copyable .usr-copy-btn {
+    min-height: 28px;
+    padding: 0 var(--ph-sp-2);
+}
+
+/* ---------------------------------------------------------------------
+   平文表示中の注意書き
+   --------------------------------------------------------------------- */
+.usr-notice {
+    margin-bottom: var(--ph-sp-4);
+    padding: var(--ph-sp-3) var(--ph-sp-4);
+    border: 1px solid var(--cm-warning);
+    border-radius: var(--ph-radius-md);
+    background: var(--ph-warning-soft);
+    color: var(--cm-warning);
+    font-size: 0.875rem;
+    line-height: 1.7;
+}
+
+.usr-notice code {
+    color: inherit;
+    letter-spacing: 0.12em;
+}
+
+/* ---------------------------------------------------------------------
+   一覧: 768px以上はテーブル、未満はカード (§32.2)
+   --------------------------------------------------------------------- */
+.usr-cards {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    .usr-table-wrap {
+        display: none;
+    }
+
+    .usr-cards {
+        display: flex;
+        flex-direction: column;
+        gap: var(--ph-sp-3);
+    }
+
+    /* 指で押しやすい大きさを確保する (§32.1) */
+    .usr-copy-btn,
+    .usr-copyable .usr-copy-btn {
+        min-height: 44px;
+    }
+
+    /* 狭い画面では折り返して表示する */
+    .usr-pw--plain {
+        white-space: normal;
+        word-break: break-all;
+    }
+}
+
+.usr-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-3);
+    padding: var(--ph-sp-4);
+    background: var(--cm-surface);
+    border: 1px solid var(--cm-border);
+    border-radius: var(--ph-radius-md);
+    box-shadow: var(--cm-shadow);
+}
+
+.usr-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-2);
+}
+
+.usr-card__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 項目名と値を2列で並べる */
+.usr-card__list {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ph-sp-2) var(--ph-sp-3);
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.usr-card__list dt {
+    color: var(--cm-muted);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.usr-card__list dd {
+    margin: 0;
+    min-width: 0;
+}
+
+/* ---------------------------------------------------------------------
+   視覚過敏への配慮 (§32 / SECURITY.md 7)
+   --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .usr-copy-btn {
+        transition: none;
+    }
+}

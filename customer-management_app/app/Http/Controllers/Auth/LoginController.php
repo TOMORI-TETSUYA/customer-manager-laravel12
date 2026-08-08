@@ -24,10 +24,6 @@ class LoginController extends Controller
     /** 認証失敗時の統一エラーメッセージ (§15.2) */
     private const FAILED_MESSAGE = 'ログインIDまたはパスワードが正しくありません。';
 
-    private const MAX_ATTEMPTS = 5;
-
-    private const DECAY_SECONDS = 60;
-
     public function __construct(
         private readonly AuditLogService $auditLog,
     ) {
@@ -43,14 +39,17 @@ class LoginController extends Controller
     {
         $throttleKey = $this->throttleKey($request);
 
-        // 試行回数制限 (§15.2: 5回 / 1分 / ID+IP単位)
-        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
+        // 試行回数制限 (§15.2)。回数・期間・遅延秒数は config/auth.php で設定する。
+        if (RateLimiter::tooManyAttempts($throttleKey, $this->throttle('max_attempts'))) {
             $seconds = RateLimiter::availableIn($throttleKey);
 
             $this->auditLog->record('login_blocked');
 
+            // ブロック中はさらに応答を遅らせ、総当たりの効率を落とす
+            $this->delayResponse($this->throttle('blocked_delay'));
+
             throw ValidationException::withMessages([
-                'login_id' => "ログイン試行回数が上限に達しました。{$seconds}秒後に再度お試しください。",
+                'login_id' => $this->blockedMessage($seconds),
             ]);
         }
 
@@ -60,11 +59,25 @@ class LoginController extends Controller
             'is_active' => true,
         ];
 
+        // 「ログイン状態を保持する」で発行するクッキーの有効期限 (§15)。
+        // Laravel の既定は約5年と長すぎるため、config/auth.php の
+        // login_max_days に合わせる。
+        // なお、クッキーの期限はブラウザ側の管理で改ざんされうるため、
+        // 実際の締め出しは EnsureLoginNotExpired ミドルウェアが担う。
+        $maxDays = (int) config('auth.login_max_days');
+
+        if ($maxDays > 0) {
+            Auth::guard()->setRememberDuration($maxDays * 24 * 60);
+        }
+
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
+            RateLimiter::hit($throttleKey, $this->throttle('decay_minutes') * 60);
 
             // ログイン失敗履歴を保存 (§14)。パスワードは記録しない。
             $this->auditLog->record('login_failed');
+
+            // 失敗のたびに応答を遅らせ、短時間に何度も試せないようにする
+            $this->delayResponse($this->throttle('failed_delay'));
 
             throw ValidationException::withMessages([
                 'login_id' => self::FAILED_MESSAGE,
@@ -86,7 +99,18 @@ class LoginController extends Controller
             return redirect()->route('password.change');
         }
 
-        return redirect()->intended(route('dashboard'));
+        // ロールごとに入口が異なる (§16)。
+        //
+        // メンバーが開ける画面は限られているため、直前に開こうとしていた
+        // URL(intended)へ戻すとログイン直後に403になることがある。
+        // 混乱を避けて、メンバーは常に既定の入口(顧客一覧)へ送る。
+        if ($user->isMember()) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route($user->homeRouteName());
+        }
+
+        return redirect()->intended(route($user->homeRouteName()));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -106,5 +130,48 @@ class LoginController extends Controller
         return Str::transliterate(
             Str::lower($request->string('login_id')->toString()) . '|' . $request->ip()
         );
+    }
+
+    /** config/auth.php の login_throttle から設定値を取り出す */
+    private function throttle(string $key): int
+    {
+        return (int) config("auth.login_throttle.{$key}");
+    }
+
+    /** ブロック中に表示する文言。残り時間は分単位で丸めて伝える。 */
+    private function blockedMessage(int $seconds): string
+    {
+        if ($seconds >= 60) {
+            $minutes = (int) ceil($seconds / 60);
+
+            return "ログイン試行回数が上限に達しました。約{$minutes}分後に再度お試しください。";
+        }
+
+        return "ログイン試行回数が上限に達しました。{$seconds}秒後に再度お試しください。";
+    }
+
+    /**
+     * 応答を意図的に遅らせる (§15.2)
+     *
+     * 総当たり攻撃は「短時間に大量に試せること」が前提なので、
+     * 1回あたりの所要時間を引き延ばして効率を落とす。
+     *
+     * 【注意】待っている間、PHP-FPM のプロセスを1つ占有し続ける。
+     * 同時に遅延できる数は docker/php/www.conf の pm.max_children が上限。
+     */
+    private function delayResponse(int $seconds): void
+    {
+        if ($seconds <= 0) {
+            return;
+        }
+
+        // ブラウザを閉じられても中断させない。
+        // 途中で止まると待たせる意味がなくなるため。
+        ignore_user_abort(true);
+
+        // 待つ時間のぶんだけ、PHPの実行時間の上限を延ばす
+        set_time_limit($seconds + 30);
+
+        sleep($seconds);
     }
 }

@@ -1,67 +1,246 @@
+# =============================================================================
+# Patron Hub — 顧客管理システム / Docker Compose 定義
+# =============================================================================
+# 3つのコンテナで構成します。
+#
+#   ブラウザ ──▶ nginx (公開) ──▶ app (PHP-FPM) ──▶ db (MySQL)
+#              :8080          :9000            :3306
+#
+# nginx だけがホストにポートを公開し、app と db は Docker 内部ネットワーク
+# (customer_manager_network) 経由でのみ通信します。
+# ※ db は開発時の DB クライアント接続用に、ループバック限定でポートを
+#   公開しています（下の db.ports のコメント参照）。
+#
+# ${...} で参照している値はすべて、このファイルと同じ階層の .env から
+# 読み込まれます。.env が無いと `docker compose up` は起動に失敗します。
+# 初回は `cp .env.example .env` を実行してください。
+# =============================================================================
+
+# プロジェクト名。コンテナ名・ネットワーク名・ボリューム名の接頭辞になります。
+# (例: ボリューム `db_data` の実体は `customer_manager_db_data`)
 name: customer_manager
 
 services:
+
+  # ---------------------------------------------------------------------------
+  # nginx : Web サーバー（唯一の公開窓口）
+  # ---------------------------------------------------------------------------
+  # 静的ファイル(css/js/画像)は自分で返し、PHP へのリクエストだけを
+  # app コンテナの PHP-FPM に転送します。
+  # ---------------------------------------------------------------------------
   nginx:
     image: nginx:stable-alpine
     container_name: customer_manager_nginx
+    # コンテナが落ちても自動で再起動します（手動で停止した場合を除く）。
     restart: unless-stopped
+
     ports:
+      # 「ホスト側:コンテナ側」。ブラウザで http://localhost:8080 を開くと
+      # コンテナの 80 番へ届きます。8080 が他で使用中なら .env の
+      # APP_PORT を変更してください（例: APP_PORT=8888）。
+      # ":-8080" は「APP_PORT が未設定なら 8080 を使う」という既定値指定です。
       - "${APP_PORT:-8080}:80"
+
     volumes:
+      # 公開ディレクトリ（ドキュメントルート）。
+      # 末尾の :ro は read-only = コンテナ側から書き換え不可、という意味です。
       - ./customer-management:/var/www/customer-management:ro
+      # サイト設定ファイル。ホスト側を編集したら
+      # `docker compose restart nginx` で反映されます。
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
     depends_on:
+      # app より先に起動しないようにします。
+      # ただし「起動した」だけの判定で、PHP-FPM の準備完了までは待ちません。
       - app
+
     networks:
       - customer_manager_network
 
+  # ---------------------------------------------------------------------------
+  # app : PHP-FPM（Laravel 本体を動かすアプリケーションサーバー）
+  # ---------------------------------------------------------------------------
+  # ポートをホストに公開していないため、外部から直接アクセスできません。
+  # nginx からのみ内部ネットワーク経由で呼び出されます。
+  # artisan や composer は `docker compose exec app <コマンド>` で実行します。
+  # ---------------------------------------------------------------------------
   app:
     build:
+      # ビルド時の基準ディレクトリ。"." はこの compose.yaml がある場所です。
       context: .
+      # 使用する Dockerfile（PHP 8.4-fpm に必要な拡張を追加したもの）。
       dockerfile: docker/php/Dockerfile
+
     container_name: customer_manager_app
     restart: unless-stopped
+
+    # コンテナに入ったとき / exec 実行時の初期ディレクトリ。
+    # Laravel 本体の場所に合わせています。
     working_dir: /var/www/customer-management_app
-    env_file:
-      - .env
+
+    # 【重要】env_file: .env は意図的に指定していません。
+    #
+    # ルートの .env をコンテナの環境変数として注入すると、その値が
+    # customer-management_app/.env の内容より優先されてしまいます。
+    # （Laravel は「環境変数が既にあれば .env ファイルで上書きしない」仕様のため）
+    #
+    # 特に APP_KEY はルート .env 側が空のままなので、注入すると
+    # `php artisan key:generate` で鍵を作っても空の値が優先され、
+    #   No application encryption key has been specified.
+    # という 500 エラーになります。
+    #
+    # そのため Laravel の設定は customer-management_app/.env だけで管理します。
+    # ルートの .env は Docker の構成（ポート番号・MySQL の初期作成情報）専用です。
+
     volumes:
+      # Laravel 本体（非公開領域）。:ro を付けていないのは、
+      # storage/ へのログ書き込みやキャッシュ生成が必要なためです。
       - ./customer-management_app:/var/www/customer-management_app
+      # 公開ディレクトリ。index.php が Laravel を呼び出す際、
+      # PHP-FPM 側にも同じパスでファイルが存在する必要があります。
       - ./customer-management:/var/www/customer-management
+      # PHP 設定の追記ファイル。ファイル名の "99-" は読み込み順で、
+      # 数字が大きいほど後に読まれ、既定値を上書きできます。
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/99-customer-manager.ini:ro
+      # PHP-FPM のプロセス数設定。ファイル名の "zz-" は読み込み順で、
+      # 既定の www.conf より後に読ませて設定を上書きするためです。
+      # ログイン時の応答遅延でプロセスが埋まらないよう同時数を増やしています。
+      - ./docker/php/www.conf:/usr/local/etc/php-fpm.d/zz-customer-manager.conf:ro
+
     depends_on:
       db:
+        # nginx の depends_on と違い、こちらは db の healthcheck が
+        # healthy になるまで app の起動を待ちます。
+        # これがないと MySQL 初期化中に接続しに行って失敗します。
         condition: service_healthy
+
     networks:
       - customer_manager_network
 
+  # ---------------------------------------------------------------------------
+  # db : MySQL 8.4（データベース）
+  # ---------------------------------------------------------------------------
+  # 初回起動時のみ docker/mysql/init/*.sql が自動実行され、全テーブルが
+  # 作成されます。2回目以降は db_data ボリュームに残ったデータを再利用する
+  # ため、SQL は実行されません。
+  # スキーマを作り直したい場合は `docker compose down -v`（-v = ボリューム削除）
+  # を実行してから起動し直してください。※ 既存データは全消去されます。
+  # ---------------------------------------------------------------------------
   db:
     image: mysql:8.4
     container_name: customer_manager_db
     restart: unless-stopped
+
+    ports:
+      # 開発用に、ホストの DB クライアント（TablePlus / A5:SQL Mk-2 /
+      # MySQL Workbench 等）から接続できるよう公開します。
+      #
+      #   接続先: 127.0.0.1 : ${DB_PORT_HOST}（既定 3307）
+      #   ユーザー: .env の DB_USERNAME / DB_PASSWORD
+      #
+      # 先頭の "127.0.0.1:" が重要です。これを省くと社内LAN等の外部から
+      # DB に到達できてしまうため、必ずループバック限定にしてください。
+      # ホスト側を 3307 にしているのは、PC に MySQL を直接インストール
+      # している場合に既定の 3306 と衝突するのを避けるためです。
+      # ※ アプリ(app)はこの公開ポートを使いません。コンテナ間は
+      #   常に db:3306 で通信します（.env の DB_PORT=3306 がそれ）。
+      - "127.0.0.1:${DB_PORT_HOST:-3307}:3306"
+
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      TZ: Asia/Tokyo
+      # MySQL 公式イメージは、以下の変数を見て初回起動時に
+      # データベースとユーザーを自動作成します。
+      MYSQL_DATABASE: ${DB_DATABASE}       # 作成するDB名
+      MYSQL_USER: ${DB_USERNAME}           # アプリ用ユーザー（上記DBの全権限付き）
+      MYSQL_PASSWORD: ${DB_PASSWORD}       # 同パスワード
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}  # root パスワード（管理用）
+      TZ: Asia/Tokyo                       # コンテナのタイムゾーン
+
     volumes:
+      # DB の実データ。名前付きボリューム（下部 volumes: で定義）に保存され、
+      # `docker compose down` してもデータは消えません。
       - db_data:/var/lib/mysql
+      # 文字コード等の追加設定。
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/customer-manager.cnf:ro
+      # 初期化SQL置き場。このディレクトリ内の .sql はファイル名の
+      # 昇順で、初回起動時に一度だけ実行されます。
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+
     healthcheck:
+      # MySQL が「接続を受け付けられる状態か」を定期的に確認します。
+      # この結果を app の depends_on が待ち合わせに使います。
       test:
         - CMD-SHELL
+        # $$ は「Compose に展開させず、コンテナ内のシェルに $ として渡す」
+        # ためのエスケープです。$ 1つだと Compose が .env の値を探しに行き、
+        # 変数未定義の警告が出てしまいます。
         - mysqladmin ping -h localhost -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      interval: 10s      # 10秒ごとに確認
+      timeout: 5s        # 5秒応答が無ければ失敗扱い
+      retries: 10        # 10回連続で失敗したら unhealthy と判定
+      start_period: 30s  # 起動直後30秒間の失敗は回数にカウントしない
+                         # （初回はテーブル作成があるため時間がかかります）
+
     networks:
       - customer_manager_network
 
+  # ---------------------------------------------------------------------------
+  # phpmyadmin : データベース管理画面（開発用）
+  # ---------------------------------------------------------------------------
+  # ブラウザで http://localhost:8090 を開くと使えます。
+  #
+  #   ログインID  : .env の DB_USERNAME（既定: customer_user）
+  #   パスワード  : .env の DB_PASSWORD
+  #   ※ root と DB_ROOT_PASSWORD でもログインできます（全DBを操作できます）
+  #
+  # 【重要】本番環境では、このサービスごと削除するかコメントアウトしてください。
+  # 管理画面から顧客データを直接閲覧・改変できてしまうためです。
+  # ---------------------------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:5
+
+    container_name: customer_manager_phpmyadmin
+    restart: unless-stopped
+
+    ports:
+      # nginx が 8080 を使っているため別の番号を割り当てます。
+      # 8081〜8086 は VS Code が使うことがあるため 8090 にしています。
+      # 先頭の "127.0.0.1:" により、このPCのブラウザからのみ接続できます。
+      # これを省くと社内LANの他の端末からDBを操作できてしまいます。
+      - "127.0.0.1:${PMA_PORT:-8090}:80"
+
+    environment:
+      # 接続先のMySQL。compose.yaml のサービス名がそのままホスト名になります。
+      # コンテナ間の通信なので 127.0.0.1 ではなく db です。
+      PMA_HOST: db
+      PMA_PORT: 3306
+      # インポートできるSQLファイルの上限
+      UPLOAD_LIMIT: 64M
+      TZ: Asia/Tokyo
+
+    depends_on:
+      db:
+        # MySQL が接続を受け付けられる状態になるまで待ちます。
+        condition: service_healthy
+
+    networks:
+      - customer_manager_network
+
+# -----------------------------------------------------------------------------
+# ネットワーク定義
+# -----------------------------------------------------------------------------
+# 3コンテナ専用の内部ネットワークです。この中ではサービス名がそのまま
+# ホスト名として使えます（例: app から DB へは "db:3306" で接続）。
+# -----------------------------------------------------------------------------
 networks:
   customer_manager_network:
     driver: bridge
 
+# -----------------------------------------------------------------------------
+# ボリューム定義
+# -----------------------------------------------------------------------------
+# MySQL のデータ永続化領域。Docker が管理する領域に保存されるため、
+# コンテナを作り直してもデータは保持されます。
+# 完全に削除するには `docker compose down -v` を実行します。
+# -----------------------------------------------------------------------------
 volumes:
   db_data:

@@ -46,9 +46,19 @@ class Invoice extends Model
         return $this->hasMany(Payment::class)->latest('paid_at');
     }
 
-    /** 入金済み合計額 */
+    /**
+     * 入金済み合計額
+     *
+     * 一覧のように複数件をまとめて表示する場面では with('payments') で
+     * 読み込み済みのことが多い。その場合は取得済みの値から合計して、
+     * 1件ごとにSQLを投げない(N+1を避ける)。
+     */
     public function paidTotal(): int
     {
+        if ($this->relationLoaded('payments')) {
+            return (int) $this->payments->sum('amount');
+        }
+
         return (int) $this->payments()->sum('amount');
     }
 

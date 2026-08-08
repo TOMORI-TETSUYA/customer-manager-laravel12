@@ -5,13 +5,13 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="/css/customer.css"
+        href="{{ $phAsset('/css/customer.css') }}"
     >
 @endpush
 
 @push('scripts')
     <script
-        src="/js/form-validation.js"
+        src="{{ $phAsset('/js/form-validation.js') }}"
         defer
     ></script>
 @endpush

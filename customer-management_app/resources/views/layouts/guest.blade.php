@@ -4,11 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="robots" content="noindex">
+    {{-- 検索エンジンへの登録拒否。
+         ログイン画面は未認証でも開けるため、ここが唯一クローラーから
+         到達しうる画面になる。他画面と同じ指示を必ず出しておく。 --}}
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
 
-    <title>@yield('title', 'ログイン') | Patron Hub</title>
+    {{-- ブラウザのタブは画面名を出さず「Patron Hub」だけを表示する --}}
+    <title>Patron Hub</title>
 
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 
     <link
         rel="stylesheet"
@@ -17,7 +23,7 @@
 
     <link
         rel="stylesheet"
-        href="/css/app.css"
+        href="{{ $phAsset('/css/app.css') }}"
     >
 
     @stack('styles')
@@ -28,7 +34,7 @@
     ></script>
 
     <script
-        src="/js/app.js"
+        src="{{ $phAsset('/js/app.js') }}"
         defer
     ></script>
 

@@ -8,7 +8,7 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="/css/dashboard.css"
+        href="{{ $phAsset('/css/dashboard.css') }}"
     >
 @endpush
 

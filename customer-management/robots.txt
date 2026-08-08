@@ -1,2 +1,118 @@
+# =====================================================================
+# Patron Hub — 検索エンジンへの登録を全面的に拒否する
+#
+# 本システムは認証が必要な業務システムで、顧客の個人情報を扱います。
+# 検索結果に一切出さないため、次の3段構えで防いでいます。
+#
+#   1. このファイル (robots.txt)
+#        巡回そのものを断る。行儀の良いクローラーはここで引き返す。
+#
+#   2. HTTPヘッダー X-Robots-Tag   … docker/nginx/default.conf
+#        robots.txt を無視して来た場合でも「登録するな」と伝える。
+#        画像など meta タグを書けないファイルにも効く。
+#
+#   3. HTMLの <meta name="robots"> … resources/views/layouts/*.blade.php
+#        2 と同じ指示をHTML側にも書いておく。
+#
+# 2 と 3 は 1 を無視するクローラー向けの保険です。
+# =====================================================================
+
+# すべてのクローラーを拒否する
 User-agent: *
 Disallow: /
+
+# --- 主要な検索エンジン ---------------------------------------------
+# 上の「*」で足りるはずだが、ワイルドカードの解釈が甘い実装への保険として
+# 名前を明示しておく。
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Googlebot-News
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Applebot
+Disallow: /
+
+User-agent: NaverBot
+Disallow: /
+
+# --- 生成AI・データ収集クローラー -----------------------------------
+# 学習データや要約の材料として本文を持ち出されないようにする。
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+# --- アーカイブ ------------------------------------------------------
+# Web魚拓・Wayback Machine への保存も断る。
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: archive.org_bot
+Disallow: /
+
+# サイトマップは公開しません。

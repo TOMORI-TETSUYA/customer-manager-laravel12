@@ -1,24 +1,36 @@
 @extends('layouts.app')
 
-@section('title', '顧客一覧')
+@php
+    // このビューは顧客一覧のほか、/dialog(対応履歴)・/contract(契約管理)・
+    // /payment(請求・入金) からも使われる (§16)。
+    // 中身は同じ顧客一覧で、初期の並び順と絞り込みだけが異なる。
+    $pageTitle = match (true) {
+        request()->routeIs('dialog.index')   => '対応履歴',
+        request()->routeIs('contract.index') => '契約管理',
+        request()->routeIs('payment.index')  => '請求・入金',
+        default                              => '顧客一覧',
+    };
+@endphp
+
+@section('title', $pageTitle)
 
 @push('styles')
     <link
         rel="stylesheet"
-        href="/css/customer.css"
+        href="{{ $phAsset('/css/customer.css') }}"
     >
 @endpush
 
 @push('scripts')
     <script
-        src="/js/customer-filter.js"
+        src="{{ $phAsset('/js/customer-filter.js') }}"
         defer
     ></script>
 @endpush
 
 @section('content')
     <div class="ph-page-head">
-        <h1 class="ph-page-head__title">顧客一覧</h1>
+        <h1 class="ph-page-head__title">{{ $pageTitle }}</h1>
         <p class="ph-page-head__sub ph-num">全 {{ number_format($customers->total()) }} 件</p>
         @can('create', App\Models\Customer::class)
             <div class="ph-page-head__actions">
@@ -31,7 +43,9 @@
 
     {{-- 検索・フィルター (§18) --}}
     <section class="ph-card">
-        <form class="ph-card__body cust-search" method="GET" action="{{ route('customers.index') }}">
+        {{-- 送信先は現在のURL。/dialog や /contract から検索しても
+             そのページに留まるようにする。 --}}
+        <form class="ph-card__body cust-search" method="GET" action="{{ url()->current() }}">
 
             <div class="cust-search__row">
                 <div class="cust-search__keyword">
@@ -59,7 +73,7 @@
                     詳細フィルター
                 </button>
 
-                <a class="ph-btn ph-btn--ghost" href="{{ route('customers.index') }}">
+                <a class="ph-btn ph-btn--ghost" href="{{ url()->current() }}">
                     条件をクリア
                 </a>
             </div>
@@ -154,14 +168,17 @@
                         </select>
                     </div>
 
-                    <div class="ph-field">
-                        <label class="ph-field__label" for="f-payment">入金状況</label>
-                        <select class="form-select" id="f-payment" name="payment_state">
-                            <option value="">すべて</option>
-                            <option value="unpaid" @selected(request('payment_state') === 'unpaid')>未入金・一部入金あり</option>
-                            <option value="clear" @selected(request('payment_state') === 'clear')>未入金なし</option>
-                        </select>
-                    </div>
+                    {{-- 入金状況は請求・入金を見られるロールにだけ出す (§16) --}}
+                    @can('access-payment')
+                        <div class="ph-field">
+                            <label class="ph-field__label" for="f-payment">入金状況</label>
+                            <select class="form-select" id="f-payment" name="payment_state">
+                                <option value="">すべて</option>
+                                <option value="unpaid" @selected(request('payment_state') === 'unpaid')>未入金・一部入金あり</option>
+                                <option value="clear" @selected(request('payment_state') === 'clear')>未入金なし</option>
+                            </select>
+                        </div>
+                    @endcan
 
                     @if (auth()->user()->isAdmin())
                         <div class="ph-field">

@@ -30,7 +30,7 @@ CREATE TABLE `users` (
     `name`                 VARCHAR(100) NOT NULL,
     `password`             VARCHAR(255) NOT NULL,
     `role`                 VARCHAR(20)  NOT NULL DEFAULT 'staff'
-        COMMENT 'admin / staff / viewer',
+        COMMENT 'admin(管理者) / staff(職員) / member(メンバー)',
     `is_active`            TINYINT(1)   NOT NULL DEFAULT 1,
     `must_change_password` TINYINT(1)   NOT NULL DEFAULT 1
         COMMENT '初回ログイン時にパスワード変更を強制する',

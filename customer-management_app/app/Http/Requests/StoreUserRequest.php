@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -13,11 +15,14 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Gate::allows('manage-users');
     }
 
     public function rules(): array
     {
+        /** @var User $actor */
+        $actor = $this->user();
+
         return [
             'login_id' => [
                 'required',
@@ -27,7 +32,14 @@ class StoreUserRequest extends FormRequest
                 Rule::unique('users', 'login_id'),
             ],
             'name'     => ['required', 'string', 'max:100'],
-            'role'     => ['required', Rule::enum(UserRole::class)],
+            'role'     => [
+                'required',
+                // 作成できるロールはロールごとに異なる (§16)。
+                //   管理者 : 管理者・職員・メンバー
+                //   職員   : メンバーのみ
+                // 画面のselectを改ざんして上位ロールを作られないようにする。
+                Rule::in(UserRole::toValues($actor->creatableUserRoles())),
+            ],
             'password' => [
                 'required',
                 'string',
@@ -44,6 +56,13 @@ class StoreUserRequest extends FormRequest
             'name'     => '表示名',
             'role'     => '権限',
             'password' => '初期パスワード',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'role.in' => 'その権限のユーザーを作成する権限がありません。',
         ];
     }
 }

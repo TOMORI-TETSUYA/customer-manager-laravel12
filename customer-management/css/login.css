@@ -135,18 +135,15 @@
     text-align: center;
 }
 
+/* ログイン画面のロゴマーク。
+   タブのアイコンと同じ絵柄を表示するため、favicon.ico に入っている画像を
+   そのまま取り出した images/logo.png を使う (app.css の .ph-mark と同じ画像)。
+   ※ 影は付けない。下の js-anim 側で filter を使っており、
+     filter: drop-shadow() を足すとアニメーションと競合するため。 */
 .login-brand__mark {
     width: 56px;
     height: 56px;
-    border-radius: 50%;
-    background:
-        conic-gradient(from 210deg,
-            var(--cm-primary) 0%, #7c6cf0 30%,
-            var(--cm-accent) 62%, var(--cm-primary) 100%);
-    box-shadow:
-        inset 0 -8px 14px rgba(24, 34, 48, 0.28),
-        inset 0 6px 10px rgba(255, 255, 255, 0.35),
-        0 8px 24px rgba(79, 70, 229, 0.35);
+    background: url("/images/logo.png") center / contain no-repeat;
 }
 
 .login-brand__title {

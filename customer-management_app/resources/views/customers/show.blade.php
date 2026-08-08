@@ -5,7 +5,7 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="/css/customer.css"
+        href="{{ $phAsset('/css/customer.css') }}"
     >
 @endpush
 
@@ -121,6 +121,8 @@
         {{-- 右: 対応履歴・契約・請求 --}}
         <div class="ph-stack-4">
 
+            {{-- 対応履歴はメンバーには表示しない (§16) --}}
+            @can('access-dialog')
             <section class="ph-card">
                 <div class="ph-card__body">
                     <div class="ph-row">
@@ -157,6 +159,7 @@
                     @endif
                 </div>
             </section>
+            @endcan
 
             <section class="ph-card">
                 <div class="ph-card__body">
@@ -204,6 +207,8 @@
                 </div>
             </section>
 
+            {{-- 請求・入金はメンバーには表示しない (§16) --}}
+            @can('access-payment')
             <section class="ph-card">
                 <div class="ph-card__body">
                     <div class="ph-row">
@@ -227,6 +232,7 @@
                                         <th>期限</th>
                                         <th class="ph-text-right">請求額</th>
                                         <th class="ph-text-right">入金済み</th>
+                                        <th class="ph-text-right">残額</th>
                                         <th>状態</th>
                                         <th></th>
                                     </tr>
@@ -238,7 +244,8 @@
                                             <td class="ph-num ph-nowrap">{{ $invoice->issue_date?->isoFormat('YY/MM/DD') }}</td>
                                             <td class="ph-num ph-nowrap">{{ $invoice->due_date?->isoFormat('YY/MM/DD') }}</td>
                                             <td class="ph-num ph-text-right ph-nowrap">¥{{ number_format((float) $invoice->amount) }}</td>
-                                            <td class="ph-num ph-text-right ph-nowrap">¥{{ number_format($invoice->payments->sum('amount')) }}</td>
+                                            <td class="ph-num ph-text-right ph-nowrap">¥{{ number_format($invoice->paidTotal()) }}</td>
+                                            <td class="ph-num ph-text-right ph-nowrap">¥{{ number_format($invoice->remaining()) }}</td>
                                             <td>
                                                 <span class="ph-badge {{ $invoice->status->badgeClass() }}">
                                                     {{ $invoice->status->label() }}
@@ -254,6 +261,44 @@
                                                 @endcan
                                             </td>
                                         </tr>
+
+                                        {{-- 請求の備考と入金明細。
+                                             どちらも登録できる項目なので、ここで確認できるようにする。 --}}
+                                        @if ($invoice->notes_encrypted || $invoice->payments->isNotEmpty())
+                                            <tr class="cust-invoice-detail">
+                                                <td colspan="8">
+                                                    @if ($invoice->notes_encrypted)
+                                                        <p class="cust-invoice-detail__note">
+                                                            <span class="ph-muted">備考</span>
+                                                            {{ $invoice->notes_encrypted }}
+                                                        </p>
+                                                    @endif
+
+                                                    @if ($invoice->payments->isNotEmpty())
+                                                        <ul class="cust-payments">
+                                                            @foreach ($invoice->payments as $payment)
+                                                                <li class="cust-payments__item">
+                                                                    <span class="ph-num ph-nowrap">
+                                                                        {{ $payment->paid_at?->isoFormat('YYYY/MM/DD') }}
+                                                                    </span>
+                                                                    <span class="ph-num ph-nowrap cust-payments__amount">
+                                                                        ¥{{ number_format((float) $payment->amount) }}
+                                                                    </span>
+                                                                    <span class="ph-badge ph-badge--muted">
+                                                                        {{ App\Models\Payment::METHODS[$payment->payment_method] ?? $payment->payment_method }}
+                                                                    </span>
+                                                                    @if ($payment->notes_encrypted)
+                                                                        <span class="ph-muted ph-text-sm">
+                                                                            {{ $payment->notes_encrypted }}
+                                                                        </span>
+                                                                    @endif
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>
@@ -261,6 +306,7 @@
                     @endif
                 </div>
             </section>
+            @endcan
 
         </div>
     </div>

@@ -157,3 +157,47 @@
     border-radius: var(--ph-radius-sm);
     font-size: 0.875rem;
 }
+
+/* ---------------------------------------------------------------------
+   請求の備考と入金明細 (顧客詳細)
+   請求1件ごとに、その下へ差し込む行。
+   --------------------------------------------------------------------- */
+.cust-invoice-detail td {
+    padding-top: var(--ph-sp-2);
+    padding-bottom: var(--ph-sp-3);
+    background: var(--cm-background);
+}
+
+.cust-invoice-detail__note {
+    margin: 0 0 var(--ph-sp-2);
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+}
+
+/* 「備考」の見出しラベル */
+.cust-invoice-detail__note .ph-muted {
+    margin-right: var(--ph-sp-2);
+    font-size: 0.75rem;
+}
+
+.cust-payments {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ph-sp-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cust-payments__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ph-sp-2) var(--ph-sp-3);
+    font-size: 0.8125rem;
+}
+
+.cust-payments__amount {
+    font-weight: 700;
+    color: var(--cm-success);
+}

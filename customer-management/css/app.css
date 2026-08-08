@@ -178,16 +178,17 @@ p {
 }
 
 /* ブランドマーク(オーブ) */
+/* ヘッダーのロゴマーク。
+   タブのアイコンと同じ絵柄を表示するため、favicon.ico に入っている画像を
+   そのまま取り出した images/logo.png を使う。
+   ※ .ico を background-image に指定するとブラウザによって表示されないため、
+     画面表示用は PNG、タブのアイコン用は .ico と使い分ける。
+   contain にして、元画像の縦横比を保ったまま枠内に収める。 */
 .ph-mark {
     width: 28px;
     height: 28px;
     flex: 0 0 auto;
-    border-radius: 50%;
-    background:
-        radial-gradient(120% 120% at 25% 20%,
-            #a5b4fc 0%, var(--cm-primary) 45%, var(--cm-primary-dark) 100%);
-    box-shadow: inset 0 -4px 8px rgba(24, 34, 48, 0.25),
-        0 2px 6px rgba(79, 70, 229, 0.35);
+    background: url("/images/logo.png") center / contain no-repeat;
 }
 
 /* 本体 = サイドバー + コンテンツ */
@@ -226,6 +227,21 @@ p {
     }
 }
 
+/* ------------------------------------------------------------------ */
+/* リンク共通                                                          */
+/* ------------------------------------------------------------------ */
+/* js/app.js の hideLinkUrlOnHover() は、マウスが乗っている間だけ
+   href を一時的に外す(画面左下にURLを出さないため)。
+   その間ブラウザはリンクとして扱わず指のカーソルに変わらないので、
+   カーソルの形だけここで固定しておく。 */
+a[href],
+a[data-nav-href],
+.ph-nav-link,
+.ph-btn {
+    cursor: pointer;
+}
+
+/* サイドメニューの項目。 */
 .ph-nav-link {
     display: flex;
     align-items: center;
@@ -236,6 +252,12 @@ p {
     text-decoration: none;
     font-size: 0.9375rem;
     transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* キーボードで移動してきたことが分かるようにする */
+.ph-nav-link:focus-visible {
+    outline: 2px solid var(--cm-primary);
+    outline-offset: -2px;
 }
 
 .ph-nav-link:hover {

@@ -18,6 +18,7 @@ use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
@@ -69,6 +70,54 @@ class CustomerController extends Controller
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'showDeleted'    => $showDeleted,
         ]);
+    }
+
+    /**
+     * CON-01 対応履歴 (/dialog)
+     *
+     * 旧 /customers?sort=contacted_desc の内容を専用URLで表示する。
+     * 最終対応日の新しい順に並べた顧客一覧。
+     */
+    public function dialog(Request $request): View
+    {
+        // 画面上で並び替えを変更した場合はその指定を優先する
+        if (! $request->has('sort')) {
+            $request->merge(['sort' => 'contacted_desc']);
+        }
+
+        return $this->index($request);
+    }
+
+    /**
+     * CTR-01 契約管理 (/contract)
+     *
+     * 旧 /customers?contract_state=active の内容を専用URLで表示する。
+     * 契約中の顧客に絞り込んだ顧客一覧。
+     */
+    public function contract(Request $request): View
+    {
+        // 画面上で「すべて」を選ぶと空文字で送られてくるため、
+        // has() で判定して絞り込みを解除できるようにする。
+        if (! $request->has('contract_state')) {
+            $request->merge(['contract_state' => 'active']);
+        }
+
+        return $this->index($request);
+    }
+
+    /**
+     * INV-01 / PAY-01 請求・入金 (/payment)
+     *
+     * 旧 /customers?payment_state=unpaid の内容を専用URLで表示する。
+     * 未入金・一部入金の請求がある顧客に絞り込んだ顧客一覧。
+     */
+    public function payment(Request $request): View
+    {
+        if (! $request->has('payment_state')) {
+            $request->merge(['payment_state' => 'unpaid']);
+        }
+
+        return $this->index($request);
     }
 
     /** CUS-02 顧客登録画面 */
@@ -138,7 +187,8 @@ class CustomerController extends Controller
 
         return view('customers.edit', [
             'customer' => $customer,
-            'users'    => $this->assigneeOptions(),
+            // 現在の担当者は、除外対象であっても選択肢に残す
+            'users'    => $this->assigneeOptions($customer->assigned_user_id),
             'tags'     => Tag::query()->orderBy('name')->get(),
         ]);
     }
@@ -283,11 +333,18 @@ class CustomerController extends Controller
         };
 
         // 入金状況
-        match ($request->input('payment_state')) {
-            'unpaid' => $query->whereHas('invoices', fn ($q) => $q->whereIn('status', ['unpaid', 'partial'])),
-            'clear'  => $query->whereDoesntHave('invoices', fn ($q) => $q->whereIn('status', ['unpaid', 'partial'])),
-            default  => null,
-        };
+        //
+        // 請求・入金を見られないロール(メンバー)には絞り込ませない (§16)。
+        // /payment ルートは can:access-payment で塞いでいるが、この条件を
+        // 素通しにすると /customers?payment_state=unpaid から同じ結果
+        // (未回収の請求がある顧客の一覧)を取得できてしまうため。
+        if (Gate::allows('access-payment')) {
+            match ($request->input('payment_state')) {
+                'unpaid' => $query->whereHas('invoices', fn ($q) => $q->whereIn('status', ['unpaid', 'partial'])),
+                'clear'  => $query->whereDoesntHave('invoices', fn ($q) => $q->whereIn('status', ['unpaid', 'partial'])),
+                default  => null,
+            };
+        }
 
         // タグ
         if ($tagId = $request->input('tag_id')) {
@@ -311,11 +368,27 @@ class CustomerController extends Controller
         $query->orderBy('id'); // ページ間で順序を安定させる
     }
 
-    /** 担当者の選択肢(有効ユーザーのみ) */
-    private function assigneeOptions()
+    /**
+     * 担当者の選択肢。
+     *
+     * 有効なユーザーのうち、運用管理用のアカウント(既定では admin)を除く。
+     * 除外の定義は config/auth.php の non_assignable_login_ids。
+     *
+     * @param int|null $keepUserId 編集時に、既にその顧客の担当になっている
+     *                             ユーザーのID。除外対象であっても選択肢に
+     *                             残す。残さないと、担当者を変えないまま
+     *                             他の項目を直して保存できなくなるため。
+     */
+    private function assigneeOptions(?int $keepUserId = null)
     {
         return User::query()
-            ->where('is_active', true)
+            ->where(function (Builder $query) use ($keepUserId): void {
+                $query->assignable();
+
+                if ($keepUserId !== null) {
+                    $query->orWhere('id', $keepUserId);
+                }
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
     }

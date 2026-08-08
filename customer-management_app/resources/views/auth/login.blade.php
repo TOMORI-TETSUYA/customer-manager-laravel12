@@ -5,13 +5,13 @@
 @push('styles')
     <link
         rel="stylesheet"
-        href="/css/login.css"
+        href="{{ $phAsset('/css/login.css') }}"
     >
 @endpush
 
 @push('scripts')
     <script
-        src="/js/login-animation.js"
+        src="{{ $phAsset('/js/login-animation.js') }}"
         defer
     ></script>
 @endpush

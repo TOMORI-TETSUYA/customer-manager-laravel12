@@ -38,8 +38,9 @@ class PasswordChangeController extends Controller
 
         $this->auditLog->record('password_changed', 'user', $user->id);
 
+        // ロールごとに入口が異なる (§16)。メンバーは顧客一覧へ。
         return redirect()
-            ->route('dashboard')
+            ->route($user->homeRouteName())
             ->with('status', 'パスワードを変更しました。');
     }
 }

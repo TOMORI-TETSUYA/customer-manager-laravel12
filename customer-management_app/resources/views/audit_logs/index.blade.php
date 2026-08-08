@@ -25,26 +25,11 @@
 
                 <div class="ph-field">
                     <label class="ph-field__label" for="l-action">操作</label>
+                    {{-- 選択肢は AuditLog::ACTIONS が唯一の定義元。
+                         ここに直接書くと一覧の表示とずれるため増やさないこと。 --}}
                     <select class="form-select" id="l-action" name="action">
                         <option value="">すべて</option>
-                        @foreach ([
-                            'login_success'    => 'ログイン成功',
-                            'login_failed'     => 'ログイン失敗',
-                            'login_blocked'    => 'ログイン制限',
-                            'logout'           => 'ログアウト',
-                            'password_changed' => 'パスワード変更',
-                            'customer_create'  => '顧客登録',
-                            'customer_update'  => '顧客更新',
-                            'customer_delete'  => '顧客削除',
-                            'customer_restore' => '顧客復元',
-                            'contact_create'   => '対応履歴登録',
-                            'contract_create'  => '契約登録',
-                            'invoice_create'   => '請求登録',
-                            'payment_create'   => '入金登録',
-                            'user_create'      => 'ユーザー作成',
-                            'user_enable'      => 'ユーザー有効化',
-                            'user_disable'     => 'ユーザー無効化',
-                        ] as $value => $label)
+                        @foreach (App\Models\AuditLog::ACTIONS as $value => $label)
                             <option value="{{ $value }}" @selected(request('action') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -85,15 +70,13 @@
                     <tr>
                         <td class="ph-num ph-nowrap">{{ $log->created_at?->isoFormat('YYYY/MM/DD HH:mm:ss') }}</td>
                         <td>{{ $log->user?->name ?? '—' }}</td>
-                        <td><span class="ph-badge ph-badge--muted">{{ $log->action }}</span></td>
-                        <td class="ph-num">
-                            @if ($log->target_type)
-                                {{ $log->target_type }} #{{ $log->target_id }}
-                            @else
-                                —
-                            @endif
+                        <td>
+                            <span class="ph-badge ph-badge--muted">{{ $log->actionLabel() }}</span>
                         </td>
+                        <td class="ph-num">{{ $log->targetLabel() ?? '—' }}</td>
                         <td class="ph-text-sm ph-muted">
+                            {{-- 変更されたカラム名のみ。値は記録しない (§23.3)。
+                                 追跡できるよう、あえてDBのカラム名のまま表示する。 --}}
                             {{ $log->changed_fields ? implode(', ', $log->changed_fields) : '—' }}
                         </td>
                         <td class="ph-num">{{ $log->ip_address }}</td>

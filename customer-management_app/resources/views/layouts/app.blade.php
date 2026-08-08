@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="robots" content="noindex">
+    {{-- 検索エンジンへの登録拒否。
+         同じ指示を HTTPヘッダー(X-Robots-Tag)と robots.txt でも出している。 --}}
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet">
 
-    <title>@yield('title', 'Patron Hub') | Patron Hub</title>
+    {{-- ブラウザのタブは画面名を出さず「Patron Hub」だけを表示する --}}
+    <title>Patron Hub</title>
 
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 
     <link
         rel="stylesheet"
@@ -17,12 +22,12 @@
 
     <link
         rel="stylesheet"
-        href="/css/app.css"
+        href="{{ $phAsset('/css/app.css') }}"
     >
 
     <link
         rel="stylesheet"
-        href="/css/responsive.css"
+        href="{{ $phAsset('/css/responsive.css') }}"
     >
 
     @stack('styles')
@@ -33,7 +38,7 @@
     ></script>
 
     <script
-        src="/js/app.js"
+        src="{{ $phAsset('/js/app.js') }}"
         defer
     ></script>
 
@@ -57,7 +62,9 @@
             </svg>
         </button>
 
-        <a class="ph-header__brand" href="{{ route('dashboard') }}">
+        {{-- 遷移先はロールごとに変える。メンバーはダッシュボードを
+             開けないため、固定リンクにすると403になってしまう (§16)。 --}}
+        <a class="ph-header__brand" href="{{ route(auth()->user()->homeRouteName()) }}">
             <span class="ph-mark" aria-hidden="true"></span>
             Patron Hub
         </a>
